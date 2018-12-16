@@ -45,11 +45,12 @@ class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription positionSub;
   StreamSubscription StateSubscription;
   PlayerState status = PlayerState.stopped;
+  int index = 0;
 
   @override
   void initState() {
     super.initState();
-    maMusiqueActuelle = maListDeMusique[0];
+    maMusiqueActuelle = maListDeMusique[index];
     configurationAudioPlayer();
   }
 
@@ -89,20 +90,19 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                textStyle('0:00', 0.8),
-                textStyle('0:22', 0.8)
+                textStyle(fromDuration(position), 0.8),
+                textStyle(fromDuration(duree), 0.8)
               ],
             ),
             Slider(
               value:position.inSeconds.toDouble() ,
               min: 0.0,
-              max: 15,
+              max: duree.inSeconds.toDouble(),
               inactiveColor: Colors.white,
               activeColor: Colors.red,
               onChanged: (double d){
                 setState(() {
-                  Duration nvlDuration = Duration(seconds: d.toInt());
-                  position = nvlDuration;
+                  audioPlayer.seek(d);
                 });
               },
             )
@@ -136,9 +136,9 @@ class _MyHomePageState extends State<MyHomePage> {
           case ActionMusic.pause:
             pause();
           break;
-          case ActionMusic.forward:print('forward');
+          case ActionMusic.forward:forward();
           break;
-          case ActionMusic.rewind:print('rewind');
+          case ActionMusic.rewind:rewind();
           break;
         }
       },
@@ -179,12 +179,36 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() => status = PlayerState.paused);
   }
 
-  Future<void> stop() async {
-    await audioPlayer.stop();
-    setState(() {
-      status = PlayerState.stopped;
-      position = new Duration();
-    });
+  void forward() {
+    if(index == maListDeMusique.length - 1){
+      index = 0;
+    }else {
+      index++;
+    }
+    maMusiqueActuelle = maListDeMusique[index];
+    audioPlayer.stop();
+    configurationAudioPlayer();
+    play();
+  }
+
+  void rewind() {
+    if(position > Duration(seconds: 3)){
+      audioPlayer.seek(0.0);
+    }else {
+    if(index == 0){
+      index = maListDeMusique.length - 1;
+    }else {
+      index--;
+    }
+    maMusiqueActuelle = maListDeMusique[index];
+    audioPlayer.stop();
+    configurationAudioPlayer();
+    play();
+    }
+  }
+
+  String fromDuration(Duration duree) {
+    return duree.toString().split('.').first;
   }
 }
 enum ActionMusic {
